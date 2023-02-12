@@ -213,11 +213,12 @@ export default {
       ).in(UNIT_PIXELS);
 
       // Draw left wall end
-      result = `${result}${SVGBoard.vertical(0, verticalStudY)}`;
+      result = `${result}${SVGBoard.vertical(0, verticalStudY, this.studLength)}`;
       // Draw right wall end
       result = `${result}${SVGBoard.vertical(
         this.width.in(UNIT_PIXELS) - this.defaultBoard.width.in(UNIT_PIXELS),
-        verticalStudY
+        verticalStudY,
+          this.studLength
       )}`;
       switch (this.wallEnd) {
         case WALL_END_U_SHAPE: // The visual shape from the front is the same
@@ -226,7 +227,7 @@ export default {
           result = `${result}${SVGBoard.vertical(
             this.defaultBoard.width.in(UNIT_PIXELS),
             verticalStudY,
-            this.defaultBoard.length,
+            this.studLength,
             this.defaultBoard.depth
           )}`;
 
@@ -236,7 +237,7 @@ export default {
               this.defaultBoard.depth.in(UNIT_PIXELS) -
               this.defaultBoard.width.in(UNIT_PIXELS),
             verticalStudY,
-            this.defaultBoard.length,
+            this.studLength,
             this.defaultBoard.depth
           )}`;
           break;
@@ -244,30 +245,30 @@ export default {
           // Left wall end
           result = `${result}${SVGBoard.vertical(
             this.defaultBoard.width.in(UNIT_PIXELS),
-            verticalStudY
+            verticalStudY, this.studLength
           )}`;
           result = `${result}${SVGBoard.vertical(
             this.defaultBoard.width.in(UNIT_PIXELS) * 2,
-            verticalStudY
+            verticalStudY, this.studLength
           )}`;
 
           // Right wall end
           result = `${result}${SVGBoard.vertical(
             this.width.in(UNIT_PIXELS) -
               this.defaultBoard.width.in(UNIT_PIXELS) * 2,
-            verticalStudY
+            verticalStudY, this.studLength
           )}`;
           result = `${result}${SVGBoard.vertical(
             this.width.in(UNIT_PIXELS) -
               this.defaultBoard.width.in(UNIT_PIXELS) * 3,
-            verticalStudY
+            verticalStudY, this.studLength
           )}`;
           break;
       }
       for (let i = 0; i < this.countVerticalStuds; i++) {
         result = `${result}${SVGBoard.vertical(
           verticalStudStartX + i * this.studSpacing.in(UNIT_PIXELS),
-          verticalStudY
+          verticalStudY, this.studLength
         )}`;
       }
       return result;
@@ -277,12 +278,12 @@ export default {
       for (let i = 0; i < this.countHorizontalStudsSolePlate - 1; i++) {
         result = `${result}${SVGBoard.horizontal(
           i * this.studLength.in(UNIT_PIXELS),
-          0
+          0, this.studLength
         )}${
           this.doubleTopPlate
             ? SVGBoard.horizontal(
                 i * this.studLength.in(UNIT_PIXELS),
-                new Inch(2).in(UNIT_PIXELS)
+                new Inch(2).in(UNIT_PIXELS), this.studLength
               )
             : ""
         }`;
@@ -302,7 +303,7 @@ export default {
           ? SVGBoard.horizontal(
               (this.countHorizontalStudsSolePlate - 1) *
                 this.studLength.in(UNIT_PIXELS),
-              new Inch(2).in(UNIT_PIXELS)
+              new Inch(2).in(UNIT_PIXELS), this.studLength
             )
           : ""
       }`;
@@ -313,7 +314,7 @@ export default {
       for (let i = 0; i < this.countHorizontalStudsSolePlate - 1; i++) {
         result = `${result}${SVGBoard.horizontal(
           i * this.studLength.in(UNIT_PIXELS),
-          this.solePlateYPosition
+          this.solePlateYPosition, this.studLength
         )}`;
       }
       let lastStudLength =
