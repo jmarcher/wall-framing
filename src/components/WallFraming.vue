@@ -146,10 +146,11 @@
 <script>
 import { Inch } from "@/core/units/Inch";
 import { Feet } from "@/core/units/Feet";
-import { UNIT_INCHES, UNIT_PIXELS } from "@/core/units/unit";
+import {UNIT_FEET, UNIT_INCHES, UNIT_PIXELS} from "@/core/units/unit";
 import { SVG_GRADIENTS } from "@/core/svg/colors";
 import { Board, DEFAULT_BOARD_LENGTH, DEFAULT_BOARDS } from "@/core/wood/board";
 import SVGBoard from "@/core/svg/board";
+import {INCHES_TO_PIXELS} from "@/core/svg/constants";
 
 const WALL_END_U_SHAPE = 1;
 const WALL_END_L_SHAPE = 2;
@@ -213,12 +214,16 @@ export default {
       ).in(UNIT_PIXELS);
 
       // Draw left wall end
-      result = `${result}${SVGBoard.vertical(0, verticalStudY, this.studLength)}`;
+      result = `${result}${SVGBoard.vertical(
+        0,
+        verticalStudY,
+        this.studLength
+      )}`;
       // Draw right wall end
       result = `${result}${SVGBoard.vertical(
         this.width.in(UNIT_PIXELS) - this.defaultBoard.width.in(UNIT_PIXELS),
         verticalStudY,
-          this.studLength
+        this.studLength
       )}`;
       switch (this.wallEnd) {
         case WALL_END_U_SHAPE: // The visual shape from the front is the same
@@ -245,31 +250,52 @@ export default {
           // Left wall end
           result = `${result}${SVGBoard.vertical(
             this.defaultBoard.width.in(UNIT_PIXELS),
-            verticalStudY, this.studLength
+            verticalStudY,
+            this.studLength
           )}`;
           result = `${result}${SVGBoard.vertical(
             this.defaultBoard.width.in(UNIT_PIXELS) * 2,
-            verticalStudY, this.studLength
+            verticalStudY,
+            this.studLength
           )}`;
 
           // Right wall end
           result = `${result}${SVGBoard.vertical(
             this.width.in(UNIT_PIXELS) -
               this.defaultBoard.width.in(UNIT_PIXELS) * 2,
-            verticalStudY, this.studLength
+            verticalStudY,
+            this.studLength
           )}`;
           result = `${result}${SVGBoard.vertical(
             this.width.in(UNIT_PIXELS) -
               this.defaultBoard.width.in(UNIT_PIXELS) * 3,
-            verticalStudY, this.studLength
+            verticalStudY,
+            this.studLength
           )}`;
           break;
       }
       for (let i = 0; i < this.countVerticalStuds; i++) {
+        let lastStud = (this.countVerticalStuds-1) === i;
         result = `${result}${SVGBoard.vertical(
           verticalStudStartX + i * this.studSpacing.in(UNIT_PIXELS),
-          verticalStudY, this.studLength
+          verticalStudY,
+          this.studLength
         )}`;
+        if (this.fireBlocks) {
+          result = `${result}${SVGBoard.horizontal(
+              (i * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3),
+              new Feet(4 + new Inch((i%2) * 10).in(UNIT_FEET)).in(UNIT_PIXELS),
+               this.inch(this.studSpacing - 2)
+          )}`;
+
+          if(lastStud){
+            result = `${result}${SVGBoard.horizontal(
+                ((i+1) * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3),
+                  new Feet(4 + new Inch(((i+1)%2) * 10).in(UNIT_FEET)).in(UNIT_PIXELS),
+                this.inch((this.width.in(UNIT_PIXELS) - ((i+1) * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3))/INCHES_TO_PIXELS)
+            )}`;
+          }
+        }
       }
       return result;
     },
@@ -278,12 +304,14 @@ export default {
       for (let i = 0; i < this.countHorizontalStudsSolePlate - 1; i++) {
         result = `${result}${SVGBoard.horizontal(
           i * this.studLength.in(UNIT_PIXELS),
-          0, this.studLength
+          0,
+          this.studLength
         )}${
           this.doubleTopPlate
             ? SVGBoard.horizontal(
                 i * this.studLength.in(UNIT_PIXELS),
-                new Inch(2).in(UNIT_PIXELS), this.studLength
+                new Inch(2).in(UNIT_PIXELS),
+                this.studLength
               )
             : ""
         }`;
@@ -303,7 +331,8 @@ export default {
           ? SVGBoard.horizontal(
               (this.countHorizontalStudsSolePlate - 1) *
                 this.studLength.in(UNIT_PIXELS),
-              new Inch(2).in(UNIT_PIXELS), this.studLength
+              new Inch(2).in(UNIT_PIXELS),
+              new Inch(lastStudLength)
             )
           : ""
       }`;
@@ -314,7 +343,8 @@ export default {
       for (let i = 0; i < this.countHorizontalStudsSolePlate - 1; i++) {
         result = `${result}${SVGBoard.horizontal(
           i * this.studLength.in(UNIT_PIXELS),
-          this.solePlateYPosition, this.studLength
+          this.solePlateYPosition,
+          this.studLength
         )}`;
       }
       let lastStudLength =
@@ -327,6 +357,11 @@ export default {
         this.solePlateYPosition,
         new Inch(lastStudLength)
       )}`;
+      return result;
+    },
+    drawFireBlocks() {
+      let result = "";
+
       return result;
     },
     solePlateYPosition() {
@@ -349,6 +384,7 @@ export default {
   <title>Wall</title>
   ${SVG_GRADIENTS}
   ${this.drawTopPlate}
+  ${this.drawFireBlocks}
   ${this.drawVerticalStuds}
   ${this.drawSolePlate}
  </g>
@@ -364,7 +400,7 @@ export default {
       // TODO: Missing wall ends in the count
       return Math.floor(
         this.width.in(UNIT_INCHES) / this.studSpacing.in(UNIT_INCHES)
-      );
+      )-1;
     },
     countHorizontalStudsSolePlate() {
       return Math.ceil(
