@@ -11,7 +11,7 @@
         <h5>Area <span class="badge bg-secondary" v-html="area"></span></h5>
         <div class="mb-3">
           <label for="wall-width" class="form-label"
-            >Width ({{ width.unitName }})</label
+            >Width ({{ width.unitName }}) [{{ widthInMeters.amount }} {{widthInMeters.unitName}}]</label
           >
           <input
             min="1"
@@ -23,7 +23,7 @@
         </div>
         <div class="mb-3">
           <label for="wall-height" class="form-label"
-            >Height ({{ height.unitName }})</label
+            >Height ({{ height.unitName }}) [{{ heightInMeters.amount }} {{heightInMeters.unitName}}]</label
           >
           <input
             readonly="readonly"
@@ -35,7 +35,7 @@
         </div>
         <div class="mb-3">
           <label for="stud-spacing" class="form-label"
-            >Stud spacing ({{ studSpacing.unitName }})</label
+            >Stud spacing ({{ studSpacing.unitName }}) [{{ studSpacingInMeters.amount }} {{studSpacingInMeters.unitName}}]</label
           >
           <input
             class="form-control"
@@ -78,7 +78,7 @@
             <option
               v-for="board in boardSizes"
               :value="board.length"
-              v-text="board.name"
+              v-text="`${board.name} (${board.length.in(2)} m)`"
               :key="board"
             ></option>
           </select>
@@ -146,11 +146,17 @@
 <script>
 import { Inch } from "@/core/units/Inch";
 import { Feet } from "@/core/units/Feet";
-import {UNIT_FEET, UNIT_INCHES, UNIT_PIXELS} from "@/core/units/unit";
+import {
+  UNIT_FEET,
+  UNIT_INCHES,
+  UNIT_METERS,
+  UNIT_PIXELS,
+} from "@/core/units/unit";
 import { SVG_GRADIENTS } from "@/core/svg/colors";
 import { Board, DEFAULT_BOARD_LENGTH, DEFAULT_BOARDS } from "@/core/wood/board";
 import SVGBoard from "@/core/svg/board";
-import {INCHES_TO_PIXELS} from "@/core/svg/constants";
+import { INCHES_TO_PIXELS } from "@/core/svg/constants";
+import { Meter } from "@/core/units/Meter";
 
 const WALL_END_U_SHAPE = 1;
 const WALL_END_L_SHAPE = 2;
@@ -161,6 +167,7 @@ export default {
     return {
       showWallPreview: true,
       defaultBoard: new Board(),
+      units: "imperial",
       unit: new Feet(0).unit,
       width: new Feet(20),
       height: new Feet(8),
@@ -172,11 +179,23 @@ export default {
     };
   },
   methods: {
+    UNIT_METERS() {
+      return UNIT_METERS;
+    },
     inch(value) {
       return new Inch(value);
     },
   },
   computed: {
+    widthInMeters() {
+      return new Meter(this.width.in(UNIT_METERS));
+    },
+    heightInMeters() {
+      return new Meter(this.height.in(UNIT_METERS));
+    },
+    studSpacingInMeters() {
+      return new Meter(this.studSpacing.in(UNIT_METERS));
+    },
     wallEnds() {
       return [
         {
@@ -275,24 +294,32 @@ export default {
           break;
       }
       for (let i = 0; i < this.countVerticalStuds; i++) {
-        let lastStud = (this.countVerticalStuds-1) === i;
+        let lastStud = this.countVerticalStuds - 1 === i;
         result = `${result}${SVGBoard.vertical(
-          verticalStudStartX + i * this.studSpacing.in(UNIT_PIXELS),
+            (verticalStudStartX + i * this.studSpacing.in(UNIT_PIXELS)),
           verticalStudY,
           this.studLength
         )}`;
         if (this.fireBlocks) {
           result = `${result}${SVGBoard.horizontal(
-              (i * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3),
-              new Feet(4 + new Inch((i%2) * 10).in(UNIT_FEET)).in(UNIT_PIXELS),
-               this.inch(this.studSpacing - 2)
+              (i * this.studSpacing.in(UNIT_PIXELS) +
+              this.defaultBoard.width.in(UNIT_PIXELS) * 3) - (i === 0 ? (this.wallEnd === WALL_END_TRIPLE ? 0 : this.defaultBoard.depth.in(UNIT_PIXELS)): 0),
+            new Feet(4 + new Inch((i % 2) * 10).in(UNIT_FEET)).in(UNIT_PIXELS),
+            this.inch((this.studSpacing - 2) + (i === 0 ? (this.wallEnd === WALL_END_TRIPLE ? 0 : this.defaultBoard.depth.in(UNIT_INCHES)): 0))
           )}`;
 
-          if(lastStud){
+          if (lastStud) {
             result = `${result}${SVGBoard.horizontal(
-                ((i+1) * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3),
-                  new Feet(4 + new Inch(((i+1)%2) * 10).in(UNIT_FEET)).in(UNIT_PIXELS),
-                this.inch((this.width.in(UNIT_PIXELS) - ((i+1) * this.studSpacing.in(UNIT_PIXELS)) + (this.defaultBoard.width.in(UNIT_PIXELS)*3))/INCHES_TO_PIXELS)
+              (i + 1) * this.studSpacing.in(UNIT_PIXELS) +
+                this.defaultBoard.width.in(UNIT_PIXELS) * 3,
+              new Feet(4 + new Inch(((i + 1) % 2) * 10).in(UNIT_FEET)).in(
+                UNIT_PIXELS
+              ),
+              this.inch(
+                (this.width.in(UNIT_PIXELS) -
+                  (verticalStudStartX + i * this.studSpacing.in(UNIT_PIXELS)) - this.defaultBoard.width.in(UNIT_PIXELS)*(this.wallEnd === WALL_END_TRIPLE ? 4 : 2)) /
+                  INCHES_TO_PIXELS
+              )
             )}`;
           }
         }
@@ -359,11 +386,6 @@ export default {
       )}`;
       return result;
     },
-    drawFireBlocks() {
-      let result = "";
-
-      return result;
-    },
     solePlateYPosition() {
       return (
         this.studLength.in(UNIT_PIXELS) +
@@ -384,7 +406,6 @@ export default {
   <title>Wall</title>
   ${SVG_GRADIENTS}
   ${this.drawTopPlate}
-  ${this.drawFireBlocks}
   ${this.drawVerticalStuds}
   ${this.drawSolePlate}
  </g>
@@ -394,13 +415,15 @@ export default {
       return `data:image/svg+xml,${encodeURIComponent(this.wallSVG)}`;
     },
     area() {
-      return `${this.width * this.height} ${this.width.unitName}<sup>2</sup>`;
+      return `${this.width * this.height} ${this.width.unitName}<sup>2</sup>, ${Math.round(this.width.in(UNIT_METERS) * this.height.in(UNIT_METERS) * 100)/100} ${(new Meter(1)).unitName}<sup>2</sup>`;
     },
     countVerticalStuds() {
       // TODO: Missing wall ends in the count
-      return Math.floor(
-        this.width.in(UNIT_INCHES) / this.studSpacing.in(UNIT_INCHES)
-      )-1;
+      return (
+        Math.floor(
+          this.width.in(UNIT_INCHES) / this.studSpacing.in(UNIT_INCHES)
+        ) - 1
+      );
     },
     countHorizontalStudsSolePlate() {
       return Math.ceil(
@@ -425,6 +448,19 @@ export default {
         (this.width.in(UNIT_INCHES) - this.countVerticalStuds * 2) /
           this.studLength.in(UNIT_INCHES)
       );
+    },
+  },
+  watch: {
+    units(newValue) {
+      switch (newValue) {
+        case "imperial":
+          console.log(this.width.unit)
+          this.width = new Feet(this.width.in(UNIT_FEET));
+          break;
+        case "metric":
+          this.width = new Meter(this.width.in(UNIT_METERS));
+          break;
+      }
     },
   },
 };

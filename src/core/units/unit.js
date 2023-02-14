@@ -7,7 +7,7 @@ export const UNIT_PIXELS = 3;
 
 const FEET_TO_INCHES = 12;
 
-const METERS_TO_INCHES = 2.54;
+const METERS_TO_INCHES = 2.54 / 100;
 export class Unit {
   get amount() {
     return this._value;
@@ -16,6 +16,8 @@ export class Unit {
   set amount(value) {
     if (value.unit === UNIT_INCHES) {
       this._value = value._value * METERS_TO_INCHES;
+    } else if (value.unit === UNIT_FEET) {
+      this._value = value.in(UNIT_INCHES) * METERS_TO_INCHES;
     } else {
       this._value = value;
     }
@@ -88,9 +90,9 @@ export class Unit {
 
   convertToMeters() {
     if (this.unit === UNIT_INCHES) {
-      return this.amount * METERS_TO_INCHES;
+      return Math.round(this.amount * METERS_TO_INCHES * 1000)/1000;
     } else if (this.unit === UNIT_FEET) {
-      return this.convertToInches() * METERS_TO_INCHES;
+      return Math.round(this.convertToInches() * METERS_TO_INCHES * 1000) / 1000;
     }
 
     return this.amount;
